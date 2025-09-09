@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -87,4 +88,47 @@ public class RedisUtil {
         }
         throw new IllegalArgumentException("Unsupported value type: " + value.getClass());
     }
+
+    /**
+     *
+     * @param key Redis键
+     * @param value 存储值
+     * @param expireTime Redis过期时间
+     */
+    public void set(String key, String value, int expireTime) {
+        try {
+            //Redis存储的键值对
+            redisTemplate.opsForValue().set(key, value);
+            //设置Redis过期时间
+            redisTemplate.expire(key, expireTime, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException("Redis设置值失败：" + e.getMessage(), e);
+        }
+    }
+
+    public String get(String key) {
+        try {
+            Object value = redisTemplate.opsForValue().get(key);
+            return value != null ? value.toString() : null;
+        } catch (Exception e) {
+            throw new RuntimeException("Redis获取值失败：" + e.getMessage(), e);
+        }
+    }
+
+    public Boolean delete(String key) {
+        try {
+            return redisTemplate.delete(key);
+        } catch (Exception e) {
+            throw new RuntimeException("Redis删除键失败: " + e.getMessage(), e);
+        }
+    }
+
+    public Long delete(String... keys) {
+        try {
+            return redisTemplate.delete(Arrays.asList(keys));
+        } catch (Exception e) {
+            throw new RuntimeException("Redis批量删除键失败：" + e.getMessage(), e);
+        }
+    }
+
 }
