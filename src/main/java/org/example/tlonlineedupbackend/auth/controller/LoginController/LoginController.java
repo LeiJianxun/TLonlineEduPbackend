@@ -9,6 +9,7 @@ import org.example.tlonlineedupbackend.auth.entity.User;
 import org.example.tlonlineedupbackend.auth.repository.DepartmentRepository;
 import org.example.tlonlineedupbackend.auth.repository.UserRepository;
 import org.example.tlonlineedupbackend.auth.security.CustomUserDetails;
+import org.example.tlonlineedupbackend.auth.service.CaptchaService;
 import org.example.tlonlineedupbackend.auth.service.UserService;
 import org.example.tlonlineedupbackend.auth.service.LoginService;
 import org.example.tlonlineedupbackend.auth.util.RedisUtil;
@@ -36,6 +37,9 @@ public class LoginController {
     @Autowired
     private RedisUtil redisUtil;
 
+    @Autowired
+    public CaptchaService captchaService;
+
     private final UserRepository userRepository;
 
     public LoginController(UserRepository userRepository) {
@@ -43,8 +47,16 @@ public class LoginController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(HttpServletRequest request, @RequestParam("phone") String phoneNumber, @RequestParam("password") String password) {
+    public ResponseEntity<?> login(HttpServletRequest request, @RequestParam("phone") String phoneNumber, @RequestParam("password") String password, @RequestParam("captchaId") String captchaId, @RequestParam("captchaCode") String captchaCode) {
         try {
+            //验证码验证
+            ResponseEntity<Map<String, Object>> captchaResult =
+                    captchaService.verifyCaptcha(captchaId, captchaCode);
+
+            if (!captchaResult.getStatusCode().is2xxSuccessful()) {
+                return ResponseEntity.badRequest().body("验证码验证失败");
+            }
+
             CustomUserDetails userDetails = (CustomUserDetails) loginService.validateLogin(phoneNumber, password);
             HttpSession session = request.getSession();
             session.setAttribute("user", userDetails);
