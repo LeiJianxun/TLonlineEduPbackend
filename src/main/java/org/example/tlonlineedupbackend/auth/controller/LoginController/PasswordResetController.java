@@ -3,12 +3,15 @@ package org.example.tlonlineedupbackend.auth.controller.LoginController;
 import lombok.Data;
 import org.example.tlonlineedupbackend.auth.entity.User;
 import org.example.tlonlineedupbackend.auth.repository.UserRepository;
+import org.example.tlonlineedupbackend.auth.service.CaptchaService;
 import org.example.tlonlineedupbackend.auth.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -23,8 +26,20 @@ public class PasswordResetController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    public CaptchaService captchaService;
+
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody PasswordResetRequest request) {
+
+        //验证码验证
+        ResponseEntity<Map<String, Object>> captchaResult =
+                captchaService.verifyCaptcha(request.getCaptchaId(), request.getCaptchaCode());
+
+        if (!captchaResult.getStatusCode().is2xxSuccessful()) {
+            return ResponseEntity.badRequest().body("验证码验证失败");
+        }
+
         try {
             Optional<User> userOptional = userRepository.findByPhone(request.getPhone());
             if (userOptional.isEmpty()) {
@@ -63,4 +78,6 @@ class PasswordResetRequest {
     private String phone;
     private String oldPassword;
     private String newPassword;
+    private String captchaId;
+    private String captchaCode;
 }

@@ -45,6 +45,7 @@ public class RegisterServiceImpl implements RegisterService {
         newUser.setAge(age);
         newUser.setIdentifiers(identifiers);
         newUser.setCreate_time(new Date());
+        newUser.setPassword_reset_required(false);
 
         userRepository.save(newUser);
         return true;
